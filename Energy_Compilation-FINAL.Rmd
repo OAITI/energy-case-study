@@ -1,0 +1,723 @@
+---
+title: "Beginner's Data Analysis: Examining Energy Data"
+subtitle: ""
+author: "Nicole Wright"
+output:
+  xaringan::moon_reader:
+    css: ["default", "css/styles.css"]
+    logo: images/oaiti_logo.png
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(fig.align = "center", tidy.opts = list(width.cutoff = 35), tidy = TRUE, fig.height = 5)
+library(kableExtra)
+library(formatR)
+library(knitr)
+library(xaringan)
+```
+
+# Agenda
+
+* Introduction
+
+* Temperature Data
+
+* Gas Data
+
+* Electricity Data 
+
+---
+
+# OAITI
+
+<img src="images/oaiti.png" width="400px">
+
+We are a non-profit corporation with the mission of promoting social welfare through data science research and public education
+
+Three primary focus areas:
+
+- Mentorship and Open Education
+- Socially Relevant Research and Implementation
+- Open Data and Analytics
+
+https://oaiti.org
+
+---
+
+# Types of Apps We Create 
+
+* **Awareness**: <img src="images/bullying.png" align="right" width="365px" >
+Discovering a societal issue.
+<br><br><br><br>
+
+* **Educational**: <img src="images/energy_app.png" align="right" width="365px">
+Learning more about an issue.
+<br><br><br><br>
+
+* **Utility**:  <img src="images/teacher.png" align="right" width="350px" height="130px">
+Perform tasks/ Program management.
+
+---
+
+# Thank You
+
+- Website: https://oaiti.org
+- Email: info@oaiti.org
+- Twitter: @OAITI_
+- GitHub: https://github.com/OAITI
+
+Any questions?
+
+---
+# Purpose
+
+The purpose of this short course is to encourage the mind-set of data analysis. We will be using the R (or Rstudio) as a tool for statistical analysis. It would be helpful if you had a basic understanding of R coding and statistical analysis, however it is not needed to understand the concepts we'll be talking about. 
+
+---
+## Why is Data Analysis Important?
+
+Data analysis is the process of inspecting, cleaning, transforming, and modeling data to find useful information. Data analysis is used in some form in every single facet of science and business. Performing data analysis accurately and without bias is paramount to success! 
+
+We hope this short course will help describe what data analysis entails and how to go about performing it using R.
+
+---
+## Overview
+
+OAITI has been given the energy bills of a church. Our goal is to examine the relationship between the variables of the three data sets: gas, temperature, and electricity. The gas data set provides the gas usage, in Therms, and cost per billing period for the years 2013-2017. The temperature data set provides the monthly average outdoor temperature over 2016-2017. The electricity data set provides the hourly electricity usage, in kWh, from 2016-2017. 
+
+---
+## General Steps of Data Analysis
+
+1. Import data
+   <tabspace>- The function you use to import will depend on the format of your data
+   
+2. Clean data
+   <tabspace>- Includes anything from renaming columns, formatting data, and creating new variables
+
+3. Analysis
+   <tabspace>- Transform, visualize, and model; repeat
+
+4. Interpret and communicate
+  <tabspace> - Interpret meaning in data based on models and logic; explain results to others
+
+---
+## Critical Thinking
+
+Critical thinking is the objective analysis of facts and observations to form a judgment. To be a great data scientist you must leverage statistical analysis with critical thinking to make informed conclusions. Critical thinking is a skill you must learn through experience and practice.
+
+Helpful questions to consider:
+
+- What is the data measuring? What are the potential limitations and biases of those measurements?
+
+- How do you expect the variables to interact based on common knowledge?
+
+- What story are you trying to tell about the data? What is your motivation?
+
+- What are possible personal and systematic biases that may affect your analysis?
+---
+## R Packages
+
+R version 3.4.1 was used to perform the analysis and RMarkdown and the Xarigan package were used to create the presentation. This course will use both common base R functions and specialized R functions collected together in packages. Packages can be installed freely using *install.packages()* and afterwards loaded using *library()*. If you are following the examples in R be sure you have installed the packages shown below.  
+
+```{r, eval = FALSE, tidy.opts = list(width.cutoff = 55)}
+install.packages("tidyverse", "lubridate", "readxl", "ggrepel")
+```
+
+tidyverse is the most used package in this course so it is worth taking some time to talk about. Other packages will be discussed as they are used in the analysis.  
+
+**tidyverse**: contains a suite of packages helpful for data analysis, some of the packages we'll use in this course are described below
+
+- readr- provides function to import data in  .csv, .tsv, and .fwf formats
+- tidyr- helps manipulate your data into a consistent and tidy form
+- dplyr- bread and butter functions for data manipulation: *filter*, *mutate*, *summarize*, etc
+- ggplot2- a data visualization package that makes graphing easy and elegant
+
+For more information on tidyverse visit: https://www.tidyverse.org/packages/
+
+---
+# Temperature Data
+
+OAITI has been given the average outdoor temperature and gas usage for a church measured monthly from 2016-2017. This data set includes the date, the average daily temperature, and gas usage per month. Our goal for this data set is to examine the relationship between temperature, gas usage, and time. This data set is heavily related to the gas data set. We will use our analyses here to help us with the next task.
+
+---
+## Temperature Data Background
+
+**Variables**
+- Date 
+- Gas usage (Therms)
+- Average temperature (Fahrenheit)
+
+**Things we know**
+- Temperature is higher in the summer months and lower in the winter months
+- Gas usage will increase in the winter months
+
+**Objective**
+- Examine the relationship between time, temperature, and gas usage
+
+---
+## Import the Data
+
+Let's get started by loading packages and importing the data. In addition to using *tidyverse* we will also use *lubridate*, a package that makes working with dates easier. We will use the *read_csv()* function to import the temperature data because it is saved as an excel file with a .csv extension. Take a look at your data using *head()* or *View()*. Below is a print out of what the data and code will look like in your browser.
+
+```{r Load Packages and Import Data, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(lubridate)
+temp <- read_csv("data/temperature_data.csv")
+head(temp, 5)
+```
+---
+## Clean the Data
+
+Cleaning your data set is anything that will make analysis easier. This includes making column names shorter, converting units, formatting variables, creating new variables, and rounding. For this data set we will perform the following:
+
+- simplify the column names
+- convert Bill month, Date, into a *date* variable
+- round to two decimal places
+
+```{r, warning = FALSE, message = FALSE}
+my.temp <- temp %>%
+  rename(Date = 'Bill month', 
+         Therms = 'Therms used', 
+         Temperature = 'Average daily temperature') %>%
+  mutate(Date = mdy(Date)) %>%
+  mutate_if(is.numeric, round, 2)
+```
+On the next slide we will take a look at our clean data set.
+
+---
+## Clean Temperature Data
+
+I have decided to display our clean temperature data in a table so that it looks nicer and it is easier to see trends. Note that in this data set therms corresponds to gas usage, this is the same data from the gas data set we will be discussing later.
+
+```{r, warning = FALSE, echo = FALSE}
+my.temp %>%
+  head(n = 5) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped")
+```
+
+There is not enough information on this table to determine any trends. Let's jump in with some exploratory analysis by looking at the relationship between temperature and date. We expect temperature will be hottest in the summer months.
+
+---
+## Temperature and Date 
+
+Let's look at how temperature changes over time. It makes sense to use a line graph because adjacent points are related on the x-axis variable time. Because our data set contains temperature data for two years we expect to see a repeating pattern. We will examine the graph on the next slide.
+
+```{r warning = FALSE, fig.show = 'hide'}
+ggplot(my.temp, aes(x = Date, y = Temperature)) +
+  geom_line() +
+  labs(title = "Average Monthly Temperature", y = "Temperature, Fahrenheit") +
+  scale_x_date(date_labels = "%b %Y")
+```
+---
+## Temperature and Date 
+
+```{r warning = FALSE, echo = FALSE}
+ggplot(my.temp, aes(x = Date, y = Temperature)) +
+  geom_line() +
+  labs(title = "Average Monthly Temperature", y = "Temperature, Fahrenheit") +
+  scale_x_date(date_labels = "%b %Y")
+```
+
+As we believed, temperatures are highest in the summer months and lowest in the winter months. With a repeating trend between years. Next let's look at therms, gas usage, and date using the same method as above. We expect that therms and temperature will be inversely related.
+
+---
+## Therms and Date 
+
+We are creating a similar graph used for the temperature and date analysis to compare temperature and Therms indirectly.To create this graph change *y = Therms* and the graph labels.
+
+```{r, warning = FALSE, echo = FALSE, fig.height = 4}
+ggplot(my.temp, aes(x = Date, y = Therms)) +
+  geom_line() +
+  labs(title = "Monthly Heat Usage", y = "Gas Usage, Therms") + 
+  scale_x_date(date_labels = "%b %Y")
+```
+
+Therms is highest in the winter months and lowest in the summer months. This relationship is inverse the trend between temperature and date implying that therms, gas usage, decreases when temperature increases. Let's examine this closer.
+
+---
+## Therms and Temperature
+
+Now that we've indirectly compared temperature and therms let's really drive the point home and compare them directly. In this case it is best to use a scatter plot, rather than a line graph, because temperature and therms are independent variables. Below is the code and on the next slide we will look at the graph. 
+
+```{r warning = FALSE, message = FALSE, fig.show = 'hide'}
+ggplot(my.temp,aes(x = Temperature, y = Therms)) +
+  geom_point() + 
+  geom_smooth(se = FALSE) +
+  labs(title = "Usage and Temperature",
+       x = "Temperature, Fahrenheit", y = "Gas Usage, Therms") 
+``` 
+
+---
+## Therms and Temperature 
+
+```{r warning = FALSE, message = FALSE, echo = FALSE, fig.height=4}
+ggplot(my.temp,aes(x = Temperature, y = Therms)) +
+  geom_point() + 
+  geom_smooth(se = FALSE) +
+  labs(title = "Usage and Temperature",
+       x = "Temperature, Fahrenheit", y = "Gas Usage, Therms") 
+``` 
+
+This graph confirms the inverse relationship between therms and temperature.
+The relationship isn't perfectly linear, but it makes sense because at the highest temperatures all therms are nearly zero. We should also notice the large increase in therms between 60 to 50 degrees Fahrenheit. 
+
+---
+# Temperature Data Conclusions
+
+This data set verified our previously held beliefs about how outdoor temperature affects gas usage. Our data analysis has shown that temperature and gas usage is inversely related and that the church's yearly pattern of usage is fairly constant from 2016 to 2017. 
+
+Moving into the next data set, gas, we expect to see a strong correlation between gas usage and temperature. 
+
+---
+# Gas Data Overview
+
+OAITI has been given the gas usage and billing information for a church. This data set includes the start and end dates of a billing period, each approximately one month, as well as the gas usage and cost in that period. Our goal for this data set is to examine the relationship between gas usage, cost, and billing period. This data set will provide good experience for cleaning data and critical thinking.
+
+---
+## Gas Data Background
+
+**Variables:** 
+- Billing period (Month)
+- Gas usage (Therms)
+- Cost ($)
+
+**Things we know**
+- Gas usage is for heating the church
+- The church is in the mid-atlantic; therefore we expect to see an increase in gas usage in winter months
+- Cost should increase with gas usage
+
+**Objective:**
+- Examine the relationship between time, gas usage, and cost
+
+---
+## Import the Data
+
+First let's get started by loading packages and importing the data. This data is an excel with xls extension and contains five rows of table headers that we are not interested in. Fortunately we can use *read_excel()* from the the readxl package and specify to skip the first 5 rows. We will also be using the *lubridate* package again.
+
+```{r warning =  FALSE, message = FALSE}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+Gas <- read_excel("data/gas_data.xlsx", skip = 5)
+```
+
+On the next slide we will look at the raw data we have imported and discuss how we can clean it up.
+
+---
+## Raw Data
+
+Below is R code of what your imported data should look like. I used the *head()* function because I want us to focus on the variable formats given under the column names. This is a neat function of *tidyr*, loaded with *tidyverse*. Notice that not all the variables can fit on the screen and are listed below body of code. For a complete picture, use *View()* to open up the data set in a new tab. Using *View()* is a good idea because your data might not be uniform. In the gas data not only is natural gas usage recorded but potable water and electricity as well, this would be easily overlooked if the raw data was not examined. 
+
+```{r}
+head(Gas, 3)
+```
+---
+## Clean Gas Data
+
+Before getting started you should think about your variables and how you should move forward with tidying. For this exercise we are only interested in gas data therefore we should remove the potable water and electricity data from our data set. After removing potable water and electricity we won't the need columns Meter Name, Meter Type, or Usage Units, so it makes sense to get rid of them. We need to reference the column names many times so it's a good idea to shorten names, but this is more of a personal preference. 
+
+When starting an analysis you don't always know what or if you like to create new variables.The creation of new variables can happen at any point in the analysis. For this data set we will want to see if the rate of usage (usage per day) has any effect of the cost. Also it will be interesting to consider if the price rate is always the same. One way to look at this will be to examine the cost per usage.
+
+---
+## Clean Gas Data
+
+- Filter Meter Name to keep only the natural gas data
+- Remove all columns except Start Date, End Date, Usage/Quantity, and Cost ($)
+- Simplify the column names to Start, End, Usage, and Cost
+- Convert start and end to *date* variables
+- Create a new column Duration which is the number of days between start and end
+- Create a new column UnitCost which is the cost divided by the Usage
+- Create a new column DailyUsage which is the usage divided by the duration
+
+```{r, warning = FALSE}
+my.gas <- Gas %>%
+  filter(`Meter Name` == 'Natural Gas') %>%
+  select(`Start Date`, `End Date`, `Usage/Quantity`, `Cost ($)`) %>%
+  rename(Start = `Start Date`, End = `End Date`, Usage = `Usage/Quantity`, Cost = `Cost ($)`) %>%
+  mutate(Start = ymd(Start), 
+         End = ymd(End),
+         Cost = as.numeric(Cost),
+         Duration = End - Start, 
+         Duration = as.numeric(Duration), 
+         UnitCost = Cost/Usage, 
+         DailyUsage = Usage/Duration) %>%
+  mutate_if(is.numeric, round, 2)
+```
+
+---
+## Clean Gas Data
+
+Below is the result of our cleaning, displayed in a table for ease of examination.
+
+```{r, warning = FALSE, echo = FALSE}
+my.gas %>%
+  head(n = 5) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped")
+```
+
+While looking at our observations there are a few trends we can start to see. High usage corresponds to high cost. High unit cost corresponds to low daily usage. Let's keep these observations in mind as we perform our exploratory analysis. 
+
+---
+## Cost and Usage
+
+Our most important variables are time (end), usage (gas usage in Therms), and cost ($). Deciding which variable to graph first can sometimes be arbitrary. In this case cost and usage tell us the most information so let's start by analyzing those. Below is the code and on the next slide we can examine the graph.
+
+```{r, warning = FALSE, message = FALSE, fig.show = 'hide'}
+ggplot(my.gas, aes(x = Usage, y = Cost)) +
+  geom_point() +
+  labs(title = "Cost by Usage", 
+       x = "Usage, Therms",
+       y = "Cost, Dollars") +
+  scale_y_continuous(labels = scales::dollar)
+```
+---
+## Cost and Usage
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+ggplot(my.gas, aes(x = Usage, y = Cost)) +
+  geom_point() +
+  labs(title = "Cost by Usage", 
+       x = "Usage, Therms",
+       y = "Cost, Dollars") +
+  scale_y_continuous(labels = scales::dollar)
+```
+
+We can see that cost and usage have a positive relationship. It is difficult to distinguish the distribution because all the low value data points are being smooshed together. The  usage data has a large range of values but the majority of its data is very low. On the next slide we will discuss how to alleviate this issue.
+
+---
+## Cost and Usage
+
+From the previous graph we could see that our x-axis variable, usage, has a  range of values from < 10 to > 1000. If we perform a base 10 log scale on the x-axis we will be able to see all of the usage data clearly. Base 10 log scale plots data by factors of 10. Our new plot, shown on the next slide, will have an x-axis of 10, 100, 1000, 10000, and 100000. To make this change to the plot shown below, we will simply need to add *scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000)* to our previous code.
+
+---
+
+## Cost and Usage
+
+```{r warning = FALSE, message = FALSE, echo = FALSE}
+ggplot(my.gas, aes(x = Usage, y = Cost)) +
+  geom_point() + 
+  geom_smooth() + 
+  scale_x_log10(labels = scales::comma) + 
+  labs(title = "Cost by Usage", 
+       x = "Log Usage, Therms",
+       y = "Cost, Dollars") +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000)) 
+```
+
+After applying base 10 log scale to usage our graph appears to have a positive exponential distribution. Because the relationship between cost and usage is non-linear we can infer that cost is not fixed. Let's continue to examine the relationship between cost and usage in the next slide by investigating unit cost. Remember that unitcost is the usage divided by the cost.
+
+
+---
+## Unitcost and Date
+
+Let's continue to examine the relationship between cost and usage using a time series plot of unitcost over end date. Unitcost is the monthly cost divided by the monthly usage. If cost is fixed unitcost to be constant. Below is the code and on the next slide we will examine the graph.
+
+```{r, warning = FALSE, message = FALSE, fig.show = 'hide'}
+ggplot(my.gas, aes(x = End, y = UnitCost)) +
+  geom_line() +
+  scale_x_date(date_labels = "%b %Y") +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(y = "Cost per Therm, $/Therm", x = "End Date", title = "Cost per Therm Over Time") 
+```
+
+---
+## Unitcost and Date
+```{r, warning = FALSE, message = FALSE, echo = FALSE, fig.height=4}
+ggplot(my.gas, aes(x = End, y = UnitCost)) +
+  geom_line() +
+  scale_x_date(date_labels = "%b %Y") +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(y = "Cost per Therm, $/Therm", x = "End Date", title = "Cost per Therm Over Time") 
+```
+
+We see that unitcost is not constant as we predicted based on our cost by usage graph. Throughout most of the years the unitcost is very low, however there are repeating points of high unitcost. The pattern of usage appears fairly similar across the years with a little more mid to low point variation after 2016. Also notice that some data appears to be missing, represented by the break in the line around Jan 2016. Low points seem to correspond to the winter months while high and mid points seem to correspond to the summer months. Let's examine unitcost by month to see if this observation holds up. 
+
+---
+## Monthly Unitcost 
+
+Let's average the unitcost of each month over all years and examine a bar chart of unitcost by month. A bar chart makes sense in this case because we are examining a categorical variable, months, on the x-axis. Below is the code and on the next slide we will examine the graph.
+
+```{r message = FALSE, warning = FALSE, fig.show = 'hide'}
+my.gas %>%
+  group_by(Month = month(End, label = TRUE)) %>%
+  summarise(UnitCost = mean(UnitCost, na.rm = TRUE) ) %>%
+  ggplot() + 
+    geom_col(aes(x = Month, y = UnitCost)) +
+    scale_y_continuous(labels = scales::dollar) +
+    labs(title = "Cost per Therm by Month", y = "Cost per Therm, $/Therm")
+```
+
+---
+## Monthly Unitcost 
+```{r message = FALSE, warning = FALSE, echo = FALSE}
+my.gas %>%
+  group_by(Month = month(End, label = TRUE)) %>%
+  summarise(UnitCost = mean(UnitCost, na.rm = TRUE) ) %>%
+  ggplot() + 
+    geom_col(aes(x = Month, y = UnitCost)) +
+    scale_y_continuous(labels = scales::dollar) +
+    labs(title = "Cost per Therm by Month", y = "Cost per Therm, $/Therm")
+```
+
+We observe that summer and fall months have a high unitcost, compared to winter months. This graph makes me think that Unitcost increases when usage decreases. It would also make sense that usage is inversely related to temperature. Let's examine usage and unit cost while looking at seasonal differences in temperature. 
+
+---
+## Seasonal Differences
+To explore the seasonal differences in gas usage predicted by temperature we will need to refer back to our temperature data set. Let's look at table of average temperatures per month and decide a temperature point to split our gas data.
+
+```{r, warning = FALSE, echo = FALSE, fig.height = 5}
+my.temp %>%
+  group_by(Month = month(Date, label = TRUE)) %>%
+  summarize(Ave_Temp = mean(Temperature)) %>%
+  arrange(Ave_Temp) %>%
+  head(n = 12) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped")
+```
+
+Notice I've listed the table in ascending order of average temperature. I think we should choose 60F as our cut off temperature because it most evenly separates the months. 
+
+---
+## Seasonal Differences
+
+```{r, warning = FALSE, fig.show = 'hide', message = FALSE, tidy.opts = list(width.cutoff = 33)}
+my.gas %>%
+  mutate(Month = month(End, label = TRUE), 
+         Season = ifelse(Month %in% 
+                           c( "Dec", "Jan", "Feb", "Mar", "Apr"),
+                         "Winter", "Summer")) %>% 
+  ggplot(aes(x = DailyUsage, y = UnitCost)) +  geom_smooth(se = FALSE) +
+    geom_point(aes(color = Season)) +
+    geom_smooth(aes(se = FALSE)) +
+    scale_x_log10(labels = scales::comma) +
+    scale_y_continuous(labels = scales::dollar) +
+    labs(title = "Cost per Therm by Daily Usage", 
+       x = "Daily Gas Usage, Therms", y = "Cost per Therm, $/Therm") 
+```
+
+In this case Dec, Jan, Feb, Mar, and Apr are the months averaging < 60F. Remember that our temperature data is based only on 2016-2017 whereas our gas data encompasses 2013-2017. This graph will primarily act a as visual guide to link gas usage, temperature, and cost.
+
+---
+## Seasonal Differences
+```{r, warning = FALSE, echo = FALSE, message = FALSE}
+my.gas %>%
+  mutate(Month = month(End, label = TRUE), 
+         Season = ifelse(Month %in% 
+                           c( "Dec", "Jan", "Feb", "Mar", "Apr"),
+                         "Winter", "Summer")) %>% 
+  ggplot(aes(x = DailyUsage, y = UnitCost)) + geom_smooth(se = FALSE) +
+    geom_point(aes(color = Season)) +
+    scale_x_log10(labels = scales::comma) +
+    scale_y_continuous(labels = scales::dollar) +
+    labs(title = "Cost per Therm by Daily Usage", 
+       x = "Daily Gas Usage, Therms", y = "Cost per Therm, $/Therm") 
+```
+
+When we split our data between warm and cold seasons it is easy to see that unitcost is greatly influenced by daily usage. Unitcost is highest when dailyusage is very low. As expected we see that dailyusage is higher for colder months and lower for warmer months.
+
+---
+# Gas Data Conclusions 
+
+In this section we have seen that the cost of gas is largely determined by the amount of usage and usage is predicted by temperatures < 60 degrees Fahrenheit. The colder the temperatures, the higher the gas usage the lower the cost per therm of gas used. Gas bills are more expensive in the winter months but summer months have a higher price rate. Perhaps the church should consider installing an electric water heater to provide low level heating and save money when only a low output of energy is needed to heat the building. 
+
+---
+# Electricity Data Overview
+
+OAITI has been given the electricity usage information for a mid-atlantic church. This data set includes the date (month/day/year), reading time (hour), and electricity usage (kWh). Our goal is to examine the relationship between electricity usage, and time. Although there are only two variables there is a lot of data manipulation to do.
+
+
+---
+## Electricity Data Background
+
+**Variables:**
+- Date (month/day/year)
+- Time (hour)
+- Electricity usage (kWh)
+
+**Things we know:**
+- Electricity usage will be higher when the church is in use
+
+**Objective:**
+- Examine the relationship between date, time of day, and electricity usage
+
+---
+## Import the Data
+
+Let's get started by loading packages and importing the data. In addition to using *tidyverse* and *lubridate*, we will also be using *ggrepel()* which helps prevent overlap of text labels on graphs. As with the temperature data, we will use the *read_csv()* because the electricity data is saved as an excel file with a .csv extension. Take a look at your data using *head()* or *View()*.
+
+
+```{r Load Packages, warning = FALSE, results = 'hide', message = FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggrepel)
+
+elec <- read_csv("data/elec_hourly.csv")
+```
+
+You should notice that elec has a date and a separate time variable. Each date and time variable by itself is not unique. We need to combine date and time into one variable so that electricity usage (value) matches to a single column. 
+
+---
+## Cleaning Electricity Data
+
+- Remove the year column
+- Rename Value to kWh
+- Merge date and start time into a new date-time variable
+
+```{r Read in Data, warning = FALSE, tidy.opts = list(width.cutoff = 30)}
+my.elec <- elec %>%
+  select(-Year) %>%
+  rename(Start = 'Start Time', kWh = 'Value') %>%
+  mutate(DateTime = paste(Date, Start/100, sep = " ")) %>%
+  mutate(DateTime = parse_date_time(DateTime, orders = "mdy_hms", truncated = 2)) %>%
+  select(DateTime, kWh)
+```
+
+Now we are left with two data points, DateTime and kWh. Keep in mind that for our DateTime variable 00:00 is equivalent to 12:00AM. This will be important later when we are graphing. It is also important to note that I chose to label the electricity usage variable as kWh to avoid confusion with the gas and temperature data.
+
+---
+## Clean Electricity Data
+
+Below is the result of our cleaning, displayed in a table for ease of examination.
+
+```{r, warning = FALSE, echo = FALSE}
+my.elec %>%
+  mutate_if(is.numeric, round, 2) %>%
+  head(n = 5) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped")
+```
+
+There is not enough information on this table to determine any trends. Let's jump in with some exploratory analysis. Our datetime variable contains year, month, day, and hour; this gives us a lot of variables to play with. Let's start with a large time scale down to a smaller time scale, from month to hour. It's important to be careful when manipulation your data so that you are grouping and summarizing over the correct subset. 
+
+---
+## kWh and Month
+
+Let's start our data analysis by determining the daily total kWh and then averaging over day and year to obtain monthly kWh. I used a bar chart to graph our continuous variable (kWh) and the time variable (months).
+
+```{r message = FALSE, warning = FALSE, fig.show =  'hide', tidy.opts = list(width.cutoff = 25)}
+my.elec %>%
+  group_by(Month = month(DateTime, label = TRUE), 
+           Day = day(DateTime), Year = year(DateTime)) %>%
+  summarize(DaykWh = sum(kWh)) %>%
+  group_by(Month, Year) %>%
+  summarize(MonthlykWh = sum(DaykWh)) %>%
+  summarize(AvekWh = mean(MonthlykWh), 
+            sdkWh = sd(MonthlykWh)) %>%
+  ggplot(aes(x = Month, y = AvekWh)) + 
+  geom_col() +
+  labs(y = "Usage, kWh", 
+       x= "Month", 
+       title = "Electricity Usage by Month" )
+```
+
+---
+## kWh and Month
+
+```{r message = FALSE, warning = FALSE, fig.width = 4, fig.height = 4, echo = FALSE}
+my.elec %>%
+  group_by(Month = month(DateTime, label = TRUE), Day = day(DateTime), Year = year(DateTime)) %>%
+  summarize(DaykWh = sum(kWh)) %>%
+  group_by(Month, Year) %>%
+  summarize(MonthlykWh = sum(DaykWh)) %>%
+  summarize(AvekWh = mean(MonthlykWh), sdkWh = sd(MonthlykWh)) %>%
+  ggplot(aes(x = Month, y = AvekWh)) + 
+  geom_col() +
+  labs(y = "Usage, kWh", 
+       x= "Month", 
+       title = "Electricity Usage by Month" )
+```
+
+Electricity usage is fairly constant by month throughout the year. There is a slight decrease in usage over the spring and fall months.
+
+---
+## kWh and Day
+
+Let's continue our data analysis by averaging kWh over hour, month, and year to obtain daily kWh. Here I used a box plot because it conveys a lot of information in a single graph. Using a box plot we can examine the median, IQR, and outliers. Using *ggrepel* I have included a label for each of the min and max values.
+
+```{r, warning = FALSE, fig.show = 'hide', tidy.opts = list(width.cutoff = 30)}
+my.elec %>%
+  mutate(DayOfWeek = wday(DateTime, label =  TRUE)) %>% 
+  group_by(DayOfWeek) %>% 
+  mutate(DateLabel = ifelse(kWh == max(kWh) | kWh == min(kWh), 
+      as.character(DateTime, format(DateTime, "%b %d, %Y")), NA)) %>%
+ggplot(aes(x = DayOfWeek, y = kWh)) +
+  geom_boxplot() +
+  labs(y = "Usage, kWh",
+       title = "Average Daily Electricity Usage") +
+  geom_label_repel(aes(label = DateLabel), size = 2.5, box.padding = .5, point.padding = 0,  label.padding = .25)
+```
+---
+## kWh and Day
+
+```{r, warning = FALSE, echo = FALSE, fig.height=4.8}
+my.elec %>%
+  mutate(DayOfWeek = wday(DateTime, label =  TRUE)) %>% 
+  mutate(DateTime = ymd_hms(DateTime)) %>%
+  group_by(DayOfWeek) %>% 
+  mutate(DateLabel = ifelse(kWh == max(kWh) | kWh == min(kWh), 
+        as.character(DateTime, format(DateTime, "%b %d, %Y")), NA)) %>%
+ggplot(aes(x = DayOfWeek, y = kWh)) +
+  geom_boxplot() +
+  labs(y = "Usage, kWh",
+       title = "Average Daily Electricity Usage") +
+  geom_label_repel(aes(label = DateLabel), size = 2.5, box.padding = .5, point.padding = 0,  label.padding = .25)
+```
+
+Notice that in this code we are not totaling daily kWh and therefore our averages are hourly among days. We can see that Sunday has the largest median usage of all days. It appears Friday through Sunday all have a high amount of variability in usage. The min values are mostly from the winter months and the max values are mostly from the summer months. This the opposite of what I would guess. It may be possible the church is in higher use in the summer months.
+
+---
+## kWh and Hour
+
+Let's continue our data analysis by averaging kWh over month and year to obtain hourly kWh I would also like to separate each based on day of the week. We expect that kWh will be highest during the day when the church is most likely to be in use.
+
+```{r, fig.show = 'hide', tidy.opts = list(width.cutoff = 30)}
+my.elec %>%
+  group_by(Hour = hour(DateTime), Day = wday(DateTime, label = TRUE)) %>%
+  summarise(kWh = mean(kWh)) %>%
+ggplot(aes(x = Hour, y = kWh)) + 
+  geom_line() +
+  labs(y = "Usage, kWh", 
+       x = "Time",
+       title = "Daily Electricity Usage") +
+  scale_x_continuous( breaks = c(0,5,10,15,20), 
+      labels = c ("12:00AM","5:00AM","10:00AM","3:00PM","8:00PM")) +
+  facet_wrap(~Day)
+```
+
+---
+## kWh and Hour 
+```{r, echo = FALSE, fig.height = 5.5, fig.width = 8}
+my.elec %>%
+  group_by(Hour = hour(DateTime), Day = wday(DateTime, label = TRUE)) %>%
+  summarise(kWh = mean(kWh)) %>%
+ggplot(aes(x = Hour, y = kWh)) + 
+  geom_line() +
+  labs(y = "Usage, kWh", 
+       x = "Time",
+       title = "Daily Electricity Usage") +
+  scale_x_continuous( breaks = c(0,5,10,15,20), 
+      labels = c ("12:00AM","5:00AM","10:00AM","3:00PM","8:00PM")) +
+  facet_wrap(~Day)
+```
+
+We can plainly see that Sunday has the largest spike in electricity usage of any of the days. We can assumed this is the primary service time for the church. Evening usage seems to increase from Thursday to Saturday, perhaps these represent smaller church activities?
+
+---
+# Electrity Data Conclusions
+
+In this section we have seen that electricity usage is fairly constant month to month. The variation we do see can be accounted for by variability between years. We've seen that Sunday has the highest mean, median, and max electricity usage of any of the days. This makes sense because sermon is held on Sunday. While examining the hourly distribution of electricity usage, aggregated over days, we saw Sunday has the largest spike in electricity usage but that from Thursday to Saturday there is a smaller peak in usage that may correspond to evening activities. 
+
+---
+<br/><br/>
+## Questions?
+
+
+
